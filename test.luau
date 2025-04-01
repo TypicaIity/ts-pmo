@@ -6,5 +6,5 @@ local parser = require("parser")
 
 print(parser.parse(lexer.tokenize([[
 section .text:
-	;
+	mov rax
 ]])))
