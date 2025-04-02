@@ -92,3 +92,5 @@ function lexer.tokenize(src: string): { Token }
 
 	return tokens
 end
+
+return lexer

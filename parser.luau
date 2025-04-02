@@ -60,7 +60,7 @@ function parser.parse(tokens: { lexer.Token }): Tree
 		if tv ~= nil then
 			assert(match(tt, tv), ERR_UNEXPECTEDTOKENV:format(t.v, t.l, t.cb, tv))
 		else
-			assert(match(tt, tv), ERR_UNEXPECTEDTOKEN:format(t.v:gsub("\n", "\\n"):gsub("\t", "\\t"), t.l, t.cb))
+			assert(match(tt, tv), ERR_UNEXPECTEDTOKEN:format(t.v:gsub("\n", "\\n"), t.l, t.cb))
 		end
 		i += 1
 		return t
@@ -73,7 +73,7 @@ function parser.parse(tokens: { lexer.Token }): Tree
 			i += 2 -- skip 'section' and '.'
 			local name: string = expect("IDENTF").v
 			expect("PUNCT", ":")
-			local node: Node = { t = "SECTION", data = { name = name }, body = {} }
+			local node: Node = { t = "SECTION", data = { name = "." .. name }, body = {} }
 			table.insert(tree, node)
 			tree = node.body :: Tree
 
