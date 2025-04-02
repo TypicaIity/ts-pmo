@@ -141,14 +141,30 @@ function parser.parse(tokens: { lexer.Token }): Tree
 			local count: number | { number } = insn.operands
 
 			if type(count) == "table" then
-				-- TODO
-
+				local currentoperands
+				local j = i
+				assert(match(tokens[i].t) or tokens[i].t == "NEWLINE", ERR_UNEXPECTEDTOKENV:format(tokens[i].v, tokens[i].l, tokens[i].cb, "NEWLINE")) --if it doesn't match it should be newline
+				if tokens[i].t == "NEWLINE" then
+					currentoperands = 0
+				else
+					while match(tokens[j].t) do
+						j+=1
+					end
+				end		
+				currentoperands = j-i
+				for i,v in pairs(count)
+					if v == currentoperands then
+						for _ = 1, v do
+							expect(insn.types)
+						end
+					end
+				end
 			else
 				assert(type(count) == "number")
 				for j=1,count do
-					local t = expect(insn.types)
-					if t.t == "IDENTF" then t.t = "REG" end
-					table.insert(operands, t)
+ 					local t = expect(insn.types)
+ 					if t.t == "IDENTF" then t.t = "REG" end
+ 					table.insert(operands, t)
 					if j ~= count then expect("PUNCT", ",") end -- expect a comma if its not the last operand
 				end
 			end
