@@ -48,12 +48,6 @@ function lexer.tokenize(src: string): { Token }
 			i += 1
 			col += 1
 
-		elseif ch:match("[+-*/]") the
-			-- collect operation
-			table.insert(tokens, { t = "OP", v = ch, l = lineNumber, cb = col, ce = col + 1 })
-			i += 1
-			col += 1
-
 		elseif ch == "[" then
 			-- collect a mem token
 			local j: number = i
