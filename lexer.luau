@@ -1,3 +1,6 @@
+--!strict
+--!optimize 2
+
 local lexer = {}
 
 export type Token = {
@@ -44,26 +47,26 @@ function lexer.tokenize(src: string): { Token }
 			table.insert(tokens, { t = "PUNCT", v = ch, l = lineNumber, cb = col, ce = col + 1 })
 			i += 1
 			col += 1
-		elseif ch:match("[+-*/]") then --operations
-			-- collect punctuation
-			table.insert(tokens, { t = "OPERAND", v = ch, l = lineNumber, cb = col, ce = col + 1 })
+
+		elseif ch:match("[+-*/]") the
+			-- collect operation
+			table.insert(tokens, { t = "OP", v = ch, l = lineNumber, cb = col, ce = col + 1 })
 			i += 1
 			col += 1
-		elseif ch:match("%[") then
-			local lenght: number = i
+
+		elseif ch == "[" then
+			-- collect a mem token
+			local j: number = i
 			local begin: number = col
-			while src:sub(lenght, lenght) ~= "]" do
-				lenght += 1
+			while src:sub(j, j) ~= "]" do
+				j += 1
 				col += 1
 			end
-			local content: string = src:sub(i+1,lenght-1)
-			local gmatchnext = content:gmatch("[+-*/]")
-			gmatchnext()
-			if gmatchnext() ~= "" then
-				error("too many operands in memory addressing. Line: "..lineNumber)
-			end
-			table.insert(tokens, {t = "MEM", v = lexer.tokenize(content), l = lineNumber, cv = begin, ce = col})
-			i = lenght+1
+			local content: string = src:sub(i+1, j-1)
+			local first, second = content:match("([+-*/])(.?)")
+			assert(not second or second == "", `too many operands. line {lineNumber}, column {col}`)
+			table.insert(tokens, { t = "MEM", v = content, l = lineNumber, cb = begin, ce = col + 1 })
+			i = j + 1 -- skip "["
 		
 		elseif ch == ";" then
 			-- skip comments
