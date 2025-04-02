@@ -18,14 +18,23 @@ local DEFAULT_COMPILER_OPTIONS: CompilerOptions = table.freeze({
 
 compiler.defaultOptions = DEFAULT_COMPILER_OPTIONS
 
--- "macros"
-local SECTION_SIGNATURE = 0xF7
+-- constants
+local SECTION_SIGNATURE: number = 0xF7
 local OPMODE: { [string]: number } = {
 	REGREG = 0x01,
 	REGMEM = 0x02,
 	REGIMM = 0x03,
 	MEMREG = 0x04,
 	MEMIMM = 0x05
+}
+
+local regsize: { [string]: number } = {
+	rax = 64, rbx = 64, rcx = 64, rdx = 64, rsp = 64, rip = 64, rbp = 64, rsi = 64, rdi = 64,
+	r8 = 64, r9 = 64, r10 = 64, r11 = 64, r12 = 64, r13 = 64, r14 = 64, r15 = 64,
+
+	eax = 32, ebx = 32, ecx = 32, esp = 32, eip = 32, ebp = 32, esi = 32, edi = 32,
+
+	flags = 16
 }
 
 local function opcode(mnemonic: string): number
@@ -36,33 +45,43 @@ local function opcode(mnemonic: string): number
 		end
 		i += 1
 	end
-	assert()
+	assert(false)
 end
 
 local function writeSection(stream: stream.Stream, data: parser.Tree, options: CompilerOptions): number
 	local start: number = stream.offset
 
 	for _, insn in data do
-		local metadata: number = 0x00
+		local metadata: number = 0x00 -- placeholder
 
 		local op: number = opcode(insn.data.mnemonic)
 		local metadataPos: number = stream:writeu8(metadata)
 		stream:writeu8(op)
 		
-		if op == 43 then -- ADD
+		if op == 43 then     -- ADD
 			local modeName: string = ""
 			for _, operand in insn.data.operands do
 				modeName ..= operand.t
 			end
 			local mode = OPMODE[modeName]
-			assert(mode)
+			assert(mode, "invalid 'add' mode")
 
 			if mode == 0x03 then -- REGIMM
-				stream:writeu8(table.find(parser.registers, insn.data.operands[1].v) :: number)
-				stream:writeu16(tonumber(insn.data.operands[2].v) :: number)
+				local r = insn.data.operands[1].v
+				stream:writeu8(table.find(parser.registers, r) :: number)
+				stream["writeu" .. tostring(regsize[r])](stream, tonumber(insn.data.operands[2].v) :: number)
 			end
 
 			metadata = mode
+		elseif op == 07 then -- RET
+			local count = #insn.data.operands
+			assert(count == 0 or count == 1, "invalid operand amount")
+			if count == 1 then
+				local bytes = tonumber(insn.data.operands[1].v)
+				assert(bytes)
+				stream:writeu8(bytes)
+			end
+			metadata = count
 		end
 
 		local old: number = stream:seek(metadataPos)

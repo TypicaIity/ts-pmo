@@ -85,7 +85,7 @@ function stream:readstring(): string
 			str ..= char
 		end
 	end
-	assert()
+	assert(false)
 end
 
 function stream:expand(by: number): number

@@ -16,59 +16,59 @@ local ERR_UNEXPECTEDTOKEN = "unexpected token '%s' at line %d, column %d"
 local ERR_UNEXPECTEDTOKENV = "unexpected token '%s' at line %d, column %d (expected '%s')"
 
 local instructions = {
-    ["mov"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["call"] = {operands = 1, types = "IMM|REG|MEM"},
-    ["jmp"] = {operands = 1, types = "IMM|REG|MEM"},
-    ["cmp"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["add"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["sub"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["mul"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["div"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["inc"] = {operands = 1, types = "REG|MEM"},
-    ["dec"] = {operands = 1, types = "REG|MEM"},
-    ["and"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["or"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["xor"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["not"] = {operands = 1, types = "REG|MEM"},
-    ["shl"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["shr"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["nop"] = {operands = 0, types = ""},
-    ["ret"] = {operands = {0, 1}, types = "IMM"},
-    ["push"] = {operands = 1, types = "REG|MEM"},
-    ["pop"] = {operands = 1, types = "REG|MEM"},
-    ["test"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["lea"] = {operands = 2, types = "REG|MEM"},
-    ["imul"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["idiv"] = {operands = 2, types = "IMM|REG|MEM"},
-    ["fld"] = {operands = 1, types = "MEM"},
-    ["fst"] = {operands = 1, types = "MEM"},
-    ["fstp"] = {operands = 1, types = "MEM"},
-    ["fadd"] = {operands = 1, types = "MEM"},
-    ["fsub"] = {operands = 1, types = "MEM"},
-    ["fmul"] = {operands = 1, types = "MEM"},
-    ["fdiv"] = {operands = 1, types = "MEM"},
-    ["fcom"] = {operands = 1, types = "MEM"},
-    ["fcomp"] = {operands = 1, types = "MEM"},
-    ["fxch"] = {operands = 1, types = "REG"},
-    ["fchs"] = {operands = 0, types = ""},
-    ["fabs"] = {operands = 0, types = ""},
-    ["fsin"] = {operands = 0, types = ""},
-    ["fcos"] = {operands = 0, types = ""},
-    ["fptan"] = {operands = 0, types = ""},
-    ["f2xm1"] = {operands = 0, types = ""},
-    ["cli"] = {operands = 0, types = ""},
-    ["hlt"] = {operands = 0, types = ""},
-    ["int"] = {operands = 1, types = "IMM"}
+	["mov"] = {operands = 2, types = "IMM|REG|MEM"},
+	["call"] = {operands = 1, types = "IMM|REG|MEM"},
+	["jmp"] = {operands = 1, types = "IMM|REG|MEM"},
+	["cmp"] = {operands = 2, types = "IMM|REG|MEM"},
+	["add"] = {operands = 2, types = "IMM|REG|MEM"},
+	["sub"] = {operands = 2, types = "IMM|REG|MEM"},
+	["mul"] = {operands = 2, types = "IMM|REG|MEM"},
+	["div"] = {operands = 2, types = "IMM|REG|MEM"},
+	["inc"] = {operands = 1, types = "REG|MEM"},
+	["dec"] = {operands = 1, types = "REG|MEM"},
+	["and"] = {operands = 2, types = "IMM|REG|MEM"},
+	["or"] = {operands = 2, types = "IMM|REG|MEM"},
+	["xor"] = {operands = 2, types = "IMM|REG|MEM"},
+	["not"] = {operands = 1, types = "REG|MEM"},
+	["shl"] = {operands = 2, types = "IMM|REG|MEM"},
+	["shr"] = {operands = 2, types = "IMM|REG|MEM"},
+	["nop"] = {operands = 0, types = ""},
+	["ret"] = {operands = {0, 1}, types = "IMM"},
+	["push"] = {operands = 1, types = "REG|MEM"},
+	["pop"] = {operands = 1, types = "REG|MEM"},
+	["test"] = {operands = 2, types = "IMM|REG|MEM"},
+	["lea"] = {operands = 2, types = "REG|MEM"},
+	["imul"] = {operands = 2, types = "IMM|REG|MEM"},
+	["idiv"] = {operands = 2, types = "IMM|REG|MEM"},
+	["fld"] = {operands = 1, types = "MEM"},
+	["fst"] = {operands = 1, types = "MEM"},
+	["fstp"] = {operands = 1, types = "MEM"},
+	["fadd"] = {operands = 1, types = "MEM"},
+	["fsub"] = {operands = 1, types = "MEM"},
+	["fmul"] = {operands = 1, types = "MEM"},
+	["fdiv"] = {operands = 1, types = "MEM"},
+	["fcom"] = {operands = 1, types = "MEM"},
+	["fcomp"] = {operands = 1, types = "MEM"},
+	["fxch"] = {operands = 1, types = "REG"},
+	["fchs"] = {operands = 0, types = ""},
+	["fabs"] = {operands = 0, types = ""},
+	["fsin"] = {operands = 0, types = ""},
+	["fcos"] = {operands = 0, types = ""},
+	["fptan"] = {operands = 0, types = ""},
+	["f2xm1"] = {operands = 0, types = ""},
+	["cli"] = {operands = 0, types = ""},
+	["hlt"] = {operands = 0, types = ""},
+	["int"] = {operands = 1, types = "IMM"}
 }
 parser.instructions = instructions
 
 local registers: { string } = {
-    "rax", "rbx", "rcx", "rdx", "rsp", "rip", "rbp", "rsi", "rdi",
+	"rax", "rbx", "rcx", "rdx", "rsp", "rip", "rbp", "rsi", "rdi",
 	"r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15",
 
-    "eax", "ebx", "ecx", "edx", "esp", "eip", "ebp", "esi", "edi",
+	"eax", "ebx", "ecx", "edx", "esp", "eip", "ebp", "esi", "edi",
 
-    "flags"
+	"flags"
 }
 parser.registers = registers
 
@@ -79,34 +79,34 @@ function parser.parse(tokens: { lexer.Token }): Tree
 
 	-- helper functions
 	local function match(tt: string, tv: string?): boolean
-	    local t = tokens[i]
-	    assert(t)
-	    
-	    -- split 'tt' by '|' if multiple types are provided
-	    local types = {}
-	    for type in tt:gmatch("[^|]+") do
-	        table.insert(types, type)
-	    end
+		local t = tokens[i]
+		assert(t)
+		
+		-- split 'tt' by '|' if multiple types are provided
+		local types = {}
+		for type in tt:gmatch("[^|]+") do
+			table.insert(types, type)
+		end
 	
-	    for _, type in ipairs(types) do
-	        if type == "REG" then
-	            if t.t == "IDENTF" and table.find(registers, t.v) ~= nil then
-	                return true
-	            end
-	        else
-	            if tv == nil then
-	                if t.t == type then
-	                    return true
-	                end
-	            else
-	                if t.t == type and t.v == tv then
-	                    return true
-	                end
-	            end
-	        end
-	    end
+		for _, type in ipairs(types) do
+			if type == "REG" then
+				if t.t == "IDENTF" and table.find(registers, t.v) ~= nil then
+					return true
+				end
+			else
+				if tv == nil then
+					if t.t == type then
+						return true
+					end
+				else
+					if t.t == type and t.v == tv then
+						return true
+					end
+				end
+			end
+		end
 	
-	    return false
+		return false
 	end
 
 	local function expect(tt: string, tv: string?): lexer.Token
@@ -141,35 +141,31 @@ function parser.parse(tokens: { lexer.Token }): Tree
 			local count: number | { number } = insn.operands
 
 			if type(count) == "table" then
-				local currentoperands
-				local j = i
-				assert(match(tokens[i].t) or tokens[i].t == "NEWLINE", ERR_UNEXPECTEDTOKENV:format(tokens[i].v, tokens[i].l, tokens[i].cb, "NEWLINE")) --if it doesn't match it should be newline
-				if tokens[i].t == "NEWLINE" then
-					currentoperands = 0
-				else
-					while match(tokens[j].t) do
-						j+=1
-					end
-				end		
-				currentoperands = j-i
-				for i,v in pairs(count)
-					if v == currentoperands then
-						for _ = 1, v do
-							expect(insn.types)
-						end
-					end
+				local operandCount = 0
+				
+				while not match("NEWLINE|EOF") do
+					operandCount += 1
+					i += 1
+				end
+				assert(table.find(count, operandCount), "operand count mismatch")
+				i -= operandCount -- go back
+				for j=1, operandCount do
+					local t = expect(insn.types)
+					if t.t == "IDENTF" then t.t = "REG" end
+					table.insert(operands, t)
+					if j ~= operandCount then expect("PUNCT", ",") end
 				end
 			else
 				assert(type(count) == "number")
 				for j=1,count do
- 					local t = expect(insn.types)
- 					if t.t == "IDENTF" then t.t = "REG" end
- 					table.insert(operands, t)
+					local t = expect(insn.types)
+					if t.t == "IDENTF" then t.t = "REG" end
+					table.insert(operands, t)
 					if j ~= count then expect("PUNCT", ",") end -- expect a comma if its not the last operand
 				end
 			end
 			
-			if i < #tokens then  expect("NEWLINE")
+			if i < #tokens then expect("NEWLINE")
 			else expect("EOF") end
 			
 			local node: Node = { t = "INSN", data = { mnemonic = token.v, operands = operands } }

@@ -20,6 +20,7 @@ function lexer.tokenize(src: string): { Token }
 
 	while i < #src do
 		local ch: string = src:sub(i, i)
+		--print(ch)
 		
 		-- a-z/A-Z = any alphabetic character
 		-- _ = underscore
@@ -39,7 +40,7 @@ function lexer.tokenize(src: string): { Token }
 				c = src:sub(j, j)
 				col += 1
 			end
-			i = j -- move the 
+			i = j
 			table.insert(tokens, { t = "IDENTF", v = buf, l = lineNumber, cb = begin, ce = col })
 		
 		elseif ch:match("[,%.:]") then
@@ -49,25 +50,26 @@ function lexer.tokenize(src: string): { Token }
 			col += 1
 
 		elseif ch:match("%d") then
+			-- collect immediate value
 			local j: number = i
 			local begin: number = col
 			local value: string
-			while src:sub(j,j):match("%d") do
-				j+=1
-				col+=1
-			end
-			if src:sub(j+1) == "h" then
-				value = "0x"..src:sub(i,j)
-				i = j + 1
+			while src:sub(j, j):match("%d") do
+				j += 1
 				col += 1
-			else
-				value = src:sub(i,j)
-				i = j
 			end
-			table.insert(tokens, { t = "IMM", v = value, l=lineNumber, cb = begin, ce = col}) 
+			
+			value = src:sub(i, j)
+			i = j
+			if src:sub(j, j) == "h" then
+				value = "0x" .. value:sub(1, -2)
+				i += 1
+				col += 1
+			end
+			table.insert(tokens, { t = "IMM", v = value, l=lineNumber, cb = begin, ce = col })
 			
 		elseif ch == "[" then
-			-- collect a mem token
+			-- collect memory
 			local j: number = i
 			local begin: number = col
 			while src:sub(j, j) ~= "]" do
@@ -95,8 +97,8 @@ function lexer.tokenize(src: string): { Token }
 			col = 1
 			i += 1
 
-		-- ignore whitespace
 		elseif ch:match("%s") then
+			-- skip whitespace
 			i += 1
 			if ch == "\t" then col += 4
 			else col += 1 end
