@@ -56,10 +56,10 @@ function lexer.tokenize(src: string): { Token }
 				j+=1
 				col+=1
 			end
-			if j+1 == "h" then
+			if src:sub(j+1) == "h" then
 				value = "0x"..src:sub(i,j)
-				i = j+1
-				col+=1
+				i = j + 1
+				col += 1
 			else
 				value = src:sub(i,j)
 				i = j
@@ -75,7 +75,7 @@ function lexer.tokenize(src: string): { Token }
 				col += 1
 			end
 			local content: string = src:sub(i+1, j-1)
-			local first, second = content:match("([+-*/])(.?)")
+			local _, second = content:match("([+-*/])(.?)")
 			assert(not second or second == "", `too many operands. line {lineNumber}, column {col}`)
 			table.insert(tokens, { t = "MEM", v = content, l = lineNumber, cb = begin, ce = col + 1 })
 			i = j + 1 -- skip "["
@@ -106,7 +106,7 @@ function lexer.tokenize(src: string): { Token }
 		end
 	end
 
-	table.insert(tokens, { t = "EOF", v = "\0", l = lineNumber, cb = col, ce = col + 1 })
+	table.insert(tokens, { t = "EOF", v = "EOF", l = lineNumber, cb = col, ce = col + 1 })
 
 	return tokens
 end

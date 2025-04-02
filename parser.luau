@@ -134,18 +134,28 @@ function parser.parse(tokens: { lexer.Token }): Tree
 
 		elseif token.t == "IDENTF" and instructions[token.v] then
 			i += 1 -- skip the keyword
-			-- to expect a register, use: expect("REG")
-			local operands = {}
-			if token.v == "ret" and tokens[i].t == "IMM" then
-				expect("IMM")
+
+			local insn = instructions[token.v]
+			
+			local operands: { lexer.Token } = { }
+			local count: number | { number } = insn.operands
+
+			if type(count) == "table" then
+				-- TODO
+
 			else
-				for _ = 1, instructions[token.v].operands do
-					table.insert(operands, tokens[i].v)
-					expect(instructions[token.v].types)
+				assert(type(count) == "number")
+				for j=1,count do
+					table.insert(operands, expect(insn.types))
+					if j ~= count then expect("PUNCT", ",") end -- expect a comma if its the last operand
 				end
-			end 
-			local node: Node = { t = "INSTR", data = { mnemonic = token.v, operands = operands } }
-			if i < #tokens then expect("NEWLINE") else expect("EOF") end
+			end
+			
+			if i < #tokens then  expect("NEWLINE")
+			else expect("EOF") end
+			
+			local node: Node = { t = "INSN", data = { mnemonic = token.v, operands = operands } }
+			table.insert(tree, node)			
 			
 		elseif token.t == "NEWLINE" then
 			i += 1
