@@ -147,7 +147,7 @@ function parser.parse(tokens: { lexer.Token }): Tree
 				assert(type(count) == "number")
 				for j=1,count do
 					table.insert(operands, expect(insn.types))
-					if j ~= count then expect("PUNCT", ",") end -- expect a comma if its the last operand
+					if j ~= count then expect("PUNCT", ",") end -- expect a comma if its not the last operand
 				end
 			end
 			
