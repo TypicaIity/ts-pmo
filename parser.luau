@@ -15,52 +15,52 @@ export type Tree = { Node }
 local ERR_UNEXPECTEDTOKEN = "unexpected token '%s' at line %d, column %d"
 local ERR_UNEXPECTEDTOKENV = "unexpected token '%s' at line %d, column %d (expected '%s')"
 
-local keywords = {
-	["mov"] = {operands = 2, types = "IMM|REG|MEM}
-	["call"] = 1, 
-	["jmp"] = 1, 
-	["cmp"] = 2, 
-	["add"] = 2, 
-	["sub"] = 2, 
-	["mul"] = 1, 
-	["div"] = 1,
-	["inc"] = 1, 
-	["dec"] = 1, 
-	["and"] = 2, 
-	["or"] = 2, 
-	["xor"] = 2, 
-	["not"] = 1, 
-	["shl"] = 2, 
-	["shr"] = 2,
-	["nop"] = 0, 
-	["ret"] = 0, 
-	["push"] = 1, 
-	["pop"] = 1, 
-	["test"] = 2, 
-	["lea"] = 2, 
-	["imul"] = 1, 
-	["idiv"] = 1,
-	["fld"] = 1, 
-	["fst"] = 1, 
-	["fstp"] = 2, 
-	["fadd"] = 2, 
-	["fsub"] = 2, 
-	["fmul"] = 2, 
-	["fdiv"] = 1, 
-	["fcom"] = 1,
-	["fcomp"] = 1, 
-	["fxch"] = 1, 
-	["fchs"] = 1, 
-	["fabs"] = 0, 
-	["fsin"] = 1, 
-	["fcos"] = 1, 
-	["fptan"]= 1,
-	["f2xm1"] = 1,
-	["cli"] = 1,
-	["hlt"] = 1, 
-	["int"] = 1,
+local instructions = {
+    ["mov"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["call"] = {operands = 1, types = "IMM|REG|MEM"},
+    ["jmp"] = {operands = 1, types = "IMM|REG|MEM"},
+    ["cmp"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["add"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["sub"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["mul"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["div"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["inc"] = {operands = 1, types = "REG|MEM"},
+    ["dec"] = {operands = 1, types = "REG|MEM"},
+    ["and"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["or"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["xor"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["not"] = {operands = 1, types = "REG|MEM"},
+    ["shl"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["shr"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["nop"] = {operands = 0, types = ""},
+    ["ret"] = {operands = {0, 1}, types = "IMM"},
+    ["push"] = {operands = 1, types = "REG|MEM"},
+    ["pop"] = {operands = 1, types = "REG|MEM"},
+    ["test"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["lea"] = {operands = 2, types = "REG|MEM"},
+    ["imul"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["idiv"] = {operands = 2, types = "IMM|REG|MEM"},
+    ["fld"] = {operands = 1, types = "MEM"},
+    ["fst"] = {operands = 1, types = "MEM"},
+    ["fstp"] = {operands = 1, types = "MEM"},
+    ["fadd"] = {operands = 1, types = "MEM"},
+    ["fsub"] = {operands = 1, types = "MEM"},
+    ["fmul"] = {operands = 1, types = "MEM"},
+    ["fdiv"] = {operands = 1, types = "MEM"},
+    ["fcom"] = {operands = 1, types = "MEM"},
+    ["fcomp"] = {operands = 1, types = "MEM"},
+    ["fxch"] = {operands = 1, types = "REG"},
+    ["fchs"] = {operands = 0, types = ""},
+    ["fabs"] = {operands = 0, types = ""},
+    ["fsin"] = {operands = 0, types = ""},
+    ["fcos"] = {operands = 0, types = ""},
+    ["fptan"] = {operands = 0, types = ""},
+    ["f2xm1"] = {operands = 0, types = ""},
+    ["cli"] = {operands = 0, types = ""},
+    ["hlt"] = {operands = 0, types = ""},
+    ["int"] = {operands = 1, types = "IMM"}
 }
-parser.keywords = keywords
+parser.instructions = instructions
 
 local registers: { string } = {
     "rax", "rbx", "rcx", "rdx", "rsp", "rip", "rbp", "rsi", "rdi",
@@ -132,14 +132,15 @@ function parser.parse(tokens: { lexer.Token }): Tree
 			table.insert(ast, node)
 			tree = node.body :: Tree
 
-		elseif token.t == "IDENTF" and table.find(keywords, token.v) then
+		elseif token.t == "IDENTF" and instructions[token.v] then
 			i += 1 -- skip the keyword
 			-- to expect a register, use: expect("REG")
 			if token.v == "ret" and tokens[i].t == "IMM" then
 				expect("IMM")
 			else
-				for j = 1, keywords[token.v] do
-					expect("IDENTIF",	) --i didn't finish noob
+				for j = 1, instructions[token.v].operands do
+					expect(instructions[token.v].types)
+				end --i didn't finish noob
 			end 
 			if i < #tokens then expect("NEWLINE") else expect("EOF") end
 			
