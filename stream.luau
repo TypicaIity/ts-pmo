@@ -12,10 +12,13 @@ export type Stream = {
 	writeu16: (self: Stream, v: number) -> number,	   -- write an unsigned 16 bit integer (short)
 	readu16: (self: Stream) -> number, 				   -- read  an unsigned 16 bit integer (short)
 
-	readstring: (self: Stream) -> string,			   -- reads  a null-terminated ASCII string
-	writestring: (self: Stream, v: string) -> number,  -- writes a null-terminated ASCII string
+	readstring: (self: Stream) -> string,			   -- read  a null-terminated ASCII string
+	writestring: (self: Stream, v: string) -> number,  -- write a null-terminated ASCII string
 
-	seek: (self: Stream, newOffset: number) -> number  -- move self.offset to newOffset, returns the previous offset
+	seek: (self: Stream, newOffset: number) -> number, -- move self.offset to newOffset. returns the old offset
+
+	expand: (self: Stream, by: number) -> number,				   -- expands self.buf by "by". returns old size
+	shrink: (self: Stream, by: number, lossy: boolean?) -> number, -- shrinks self.buf by "by". returns old size
 }
 
 function stream.new(size: number): Stream
@@ -83,6 +86,25 @@ function stream:readstring(): string
 		end
 	end
 	assert()
+end
+
+function stream:expand(by: number): number
+	assert(by > 0, "use :shrink to shrink the buffer")
+	local size: number = buffer.len(self.src)
+	local new: buffer = buffer.create(size + by)
+	buffer.copy(new, 0, self.buf)
+	self.src = new
+	return size
+end
+
+function stream:shrink(by: number, lossy: boolean?): number
+	assert(by > 0, "use :expand to expand the buffer")
+	local size: number = buffer.len(self.src)
+	assert(lossy or by < size, "data loss")
+	local new: buffer = buffer.create(size - by)
+	buffer.copy(new, 0, self.buf)
+	self.src = new
+	return size
 end
 
 return stream
