@@ -48,6 +48,24 @@ function lexer.tokenize(src: string): { Token }
 			i += 1
 			col += 1
 
+		elseif ch:match("%d") then
+			local j: number = i
+			local begin: number = col
+			local value: string
+			while src:sub(j,j):match("%d") do
+				j+=1
+				col+=1
+			end
+			if j+1 == "h" then
+				value = "0x"..src:sub(i,j)
+				i = j+1
+				col+=1
+			else
+				value = src:sub(i,j)
+				i = j
+			end
+			table.insert(tokens, { t = "IMM", v = value, l=lineNumber, cb = begin, ce = col}) 
+			
 		elseif ch == "[" then
 			-- collect a mem token
 			local j: number = i
