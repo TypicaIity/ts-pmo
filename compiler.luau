@@ -5,13 +5,12 @@ local compiler = {}
 
 local parser = require("parser")
 local stream = require("stream")
+local common = require("common")
 
 export type CompilerOptions = {
 	baseStreamSize: number,		-- the base stream size of the bytecode
 	verbose: boolean            -- log detailed information          -- TODO
 }
-
-export type Metadata = { number }
 
 local DEFAULT_COMPILER_OPTIONS: CompilerOptions = table.freeze({
 	baseStreamSize = 32,
@@ -23,46 +22,58 @@ compiler.defaultOptions = DEFAULT_COMPILER_OPTIONS
 -- constants
 local SECTION_SIGNATURE: number = 0xF7
 local OPMODE: { [string]: number } = {
-	REGREG = 0x01,
-	REGMEM = 0x02,
-	REGIMM = 0x03,
-	MEMREG = 0x04,
-	MEMIMM = 0x05
+	REGREG = 0x00,
+	REGMEM = 0x01,
+	REGIMM = 0x02,
+	MEMREG = 0x03
+}
+local OPIDX: { [string]: number } = {
+	["+"] = 0x00,
+	["-"] = 0x01
 }
 
-local regsize: { [string]: number } = {
-    -- buffer and bit32 dont support 64 bit numbers
-	rax = 32, rbx = 32, rcx = 32, rdx = 32, rsp = 32, rip = 32, rbp = 32, rsi = 32, rdi = 32,
-	r8 = 32, r9 = 32, r10 = 32, r11 = 32, r12 = 32, r13 = 32, r14 = 32, r15 = 32,
+local regsize: { [string]: number } = common.regsize
+local instructions: { [string]: { operands: number | {number}, types: string } } = common.instructions
+local registers: { string } = common.registers
 
-	eax = 32, ebx = 32, ecx = 32, esp = 32, eip = 32, ebp = 32, esi = 32, edi = 32,
+local function _pack(d: { number }, size: number): number
+	local a, b, c = unpack(d)
+	assert(size == 2 or size == 3, "invalid size")
+	assert(rawlen(d) == size and a and b)
+	if size == 3 then
+		assert(c)
+		assert(a >= 0 and a < 4, "a must be in range 0..3")
+		assert(b >= 0 and b < 8, "b must be in range 0..7")
+		assert(c >= 0 and c < 8, "c must be in range 0..7")
 
-	flags = 16
-}
+		return bit32.bor(bit32.lshift(a, 6), bit32.lshift(b, 3), c)
+	else
+		assert(a >= 0 and a < 0x10, "a must be in range 0..15")
+		assert(b >= 0 and b < 0x10, "b must be in range 0..15")
 
--- pack metadata
-local function packmd(md: Metadata): number
-	local a, b, c = unpack(md)
-	assert(rawlen(md) == 3 and a and b and c)
-	assert(a >= 0 and a < 4, "a must be in range 0..3")
-	assert(b >= 0 and b < 8, "b must be in range 0..7")
-	assert(c >= 0 and c < 8, "c must be in range 0..7")
-
-	return bit32.bor(bit32.lshift(a, 6), bit32.lshift(b, 3), c)
+		return bit32.bor(bit32.lshift(a, 4), b)
+	end
 end
 
--- unpack metadata
-local function unpackmd(byte: number): Metadata
-	return {
-		bit32.band(bit32.rshift(byte, 6), 0x03),
-		bit32.band(bit32.rshift(byte, 3), 0x07),
-		bit32.band(byte, 0x07),
-	}
+local function _unpack(byte: number, size: number): { number }
+	assert(size == 2 or size == 3, "invalid size")
+	if size == 3 then
+		return {
+			bit32.band(bit32.rshift(byte, 6), 3),
+			bit32.band(bit32.rshift(byte, 3), 7),
+			bit32.band(byte, 7),
+		}
+	else
+		return {
+			bit32.band(bit32.rshift(byte, 4), 0xF),
+			bit32.band(byte, 0xF),
+		}
+	end
 end
 
 local function opcode(mnemonic: string): number
 	local i = 1
-	for name in parser.instructions do
+	for name in instructions do
 		if name == mnemonic then
 			return i
 		end
@@ -75,10 +86,10 @@ local function writeSection(stream: stream.Stream, data: parser.Tree, options: C
 	local start: number = stream.offset
 
 	for _, insn in data do
-		local metadata: Metadata = { 0, 0, 0 } -- placeholder
+		local metadata: { number } = { 0, 0, 0 } -- placeholder
 
 		local op: number = opcode(insn.data.mnemonic)
-		local metadataPos: number = stream:writeu8(packmd(metadata))
+		local metadataPos: number = stream:writeu8(0x00)
 		stream:writeu8(op)
 		
 		if op == 43 then     -- ADD
@@ -87,12 +98,61 @@ local function writeSection(stream: stream.Stream, data: parser.Tree, options: C
 				modeName ..= operand.t
 			end
 			local mode = OPMODE[modeName]
-			assert(mode, "invalid 'add' mode")
+			assert(mode, "invalid 'ADD' mode")
 
-			if mode == 0x03 then -- REGIMM
+			if mode == 0x00 then
+				local r1: number? = table.find(registers, insn.data.operands[1].v)
+				local r2: number? = table.find(registers, insn.data.operands[2].v)
+				assert(r1, "invalid register 1")
+				assert(r2, "invalid register 2")
+				stream:writeu8(r1)
+				stream:writeu8(r2)
+
+			elseif mode == 0x01 then
+				local reg = table.find(registers, insn.data.operands[1].v)
+				local mem = insn.data.operands[2]
+				assert(reg, "invalid register")
+
+				local operator: string = string.match(mem.v, "[%+%-]") :: string
+				metadata[2] = OPIDX[operator] or 0x00
+
+				stream:writeu8(reg)
+
+				local split: { string } = string.split(mem.v, operator)
+				local mreg: number? = table.find(registers, split[1])
+				local maddr: number? = tonumber(split[1])
+				assert(mreg or maddr, "invalid operand")
+				if mreg then
+					stream:writeu8(mreg)
+					if rawlen(split) == 2 then
+						local disp: number? = tonumber(split[2])
+						assert(disp, "invalid operand")
+						stream:writeu16(disp)
+					elseif rawlen(split) ~= 1 then
+						assert(false)
+					end
+				elseif maddr then
+					stream:writeu16(maddr)
+					if rawlen(split) == 2 then
+						local maddr2: number? = tonumber(split[2])
+						assert(maddr2, "invalid operand")
+						stream:writeu16(maddr2)
+					elseif rawlen(split) ~= 1 then
+						assert(false)
+					end
+				end
+
+			elseif mode == 0x02 then
 				local r = insn.data.operands[1].v
-				stream:writeu8(table.find(parser.registers, r) :: number)
+				assert(table.find(registers, r), "invalid register")
+				assert(tonumber(insn.data.operands[2].v), "invalid immediate")
+
+				stream:writeu8(table.find(registers, r) :: number)
 				stream["writeu" .. tostring(regsize[r])](stream, tonumber(insn.data.operands[2].v) :: number)
+			
+			elseif mode == 0x03 then
+				assert(nil, "TODO")
+
 			end
 
 			metadata[1] = mode
@@ -108,7 +168,7 @@ local function writeSection(stream: stream.Stream, data: parser.Tree, options: C
 		end
 
 		local old: number = stream:seekg(metadataPos)
-		stream:writeu8(packmd(metadata))
+		stream:writeu8(_pack(metadata, 3))
 		stream:seekg(old)
 	end
 

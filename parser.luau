@@ -4,6 +4,7 @@
 local parser = {}
 
 local lexer = require("lexer")
+local common = require("common")
 
 export type Node = {
 	t: string, -- node type
@@ -15,62 +16,7 @@ export type Tree = { Node }
 local ERR_UNEXPECTEDTOKEN = "unexpected token '%s' at line %d, column %d"
 local ERR_UNEXPECTEDTOKENV = "unexpected token '%s' at line %d, column %d (expected '%s')"
 
-local instructions = {
-	["mov"] = {operands = 2, types = "IMM|REG|MEM"},
-	["call"] = {operands = 1, types = "IMM|REG|MEM"},
-	["jmp"] = {operands = 1, types = "IMM|REG|MEM"},
-	["cmp"] = {operands = 2, types = "IMM|REG|MEM"},
-	["add"] = {operands = 2, types = "IMM|REG|MEM"},
-	["sub"] = {operands = 2, types = "IMM|REG|MEM"},
-	["mul"] = {operands = 2, types = "IMM|REG|MEM"},
-	["div"] = {operands = 2, types = "IMM|REG|MEM"},
-	["inc"] = {operands = 1, types = "REG|MEM"},
-	["dec"] = {operands = 1, types = "REG|MEM"},
-	["and"] = {operands = 2, types = "IMM|REG|MEM"},
-	["or"] = {operands = 2, types = "IMM|REG|MEM"},
-	["xor"] = {operands = 2, types = "IMM|REG|MEM"},
-	["not"] = {operands = 1, types = "REG|MEM"},
-	["shl"] = {operands = 2, types = "IMM|REG|MEM"},
-	["shr"] = {operands = 2, types = "IMM|REG|MEM"},
-	["nop"] = {operands = 0, types = ""},
-	["ret"] = {operands = {0, 1}, types = "IMM"},
-	["push"] = {operands = 1, types = "REG|MEM"},
-	["pop"] = {operands = 1, types = "REG|MEM"},
-	["test"] = {operands = 2, types = "IMM|REG|MEM"},
-	["lea"] = {operands = 2, types = "REG|MEM"},
-	["imul"] = {operands = 2, types = "IMM|REG|MEM"},
-	["idiv"] = {operands = 2, types = "IMM|REG|MEM"},
-	["fld"] = {operands = 1, types = "MEM"},
-	["fst"] = {operands = 1, types = "MEM"},
-	["fstp"] = {operands = 1, types = "MEM"},
-	["fadd"] = {operands = 1, types = "MEM"},
-	["fsub"] = {operands = 1, types = "MEM"},
-	["fmul"] = {operands = 1, types = "MEM"},
-	["fdiv"] = {operands = 1, types = "MEM"},
-	["fcom"] = {operands = 1, types = "MEM"},
-	["fcomp"] = {operands = 1, types = "MEM"},
-	["fxch"] = {operands = 1, types = "REG"},
-	["fchs"] = {operands = 0, types = ""},
-	["fabs"] = {operands = 0, types = ""},
-	["fsin"] = {operands = 0, types = ""},
-	["fcos"] = {operands = 0, types = ""},
-	["fptan"] = {operands = 0, types = ""},
-	["f2xm1"] = {operands = 0, types = ""},
-	["cli"] = {operands = 0, types = ""},
-	["hlt"] = {operands = 0, types = ""},
-	["int"] = {operands = 1, types = "IMM"}
-}
-parser.instructions = instructions
-
-local registers: { string } = {
-	"rax", "rbx", "rcx", "rdx", "rsp", "rip", "rbp", "rsi", "rdi",
-	"r8",  "r9",  "r10", "r11", "r12", "r13", "r14", "r15",
-
-	"eax", "ebx", "ecx", "edx", "esp", "eip", "ebp", "esi", "edi",
-
-	"flags"
-}
-parser.registers = registers
+local instructions = common.instructions
 
 function parser.parse(tokens: { lexer.Token }): Tree
 	local ast: Tree = {}
@@ -88,20 +34,14 @@ function parser.parse(tokens: { lexer.Token }): Tree
 			table.insert(types, type)
 		end
 	
-		for _, type in ipairs(types) do
-			if type == "REG" then
-				if t.t == "IDENTF" and table.find(registers, t.v) ~= nil then
+		for _, tt in ipairs(types) do
+			if tv == nil then
+				if t.t == tt then
 					return true
 				end
 			else
-				if tv == nil then
-					if t.t == type then
-						return true
-					end
-				else
-					if t.t == type and t.v == tv then
-						return true
-					end
+				if t.t == tt and t.v == tv then
+					return true
 				end
 			end
 		end

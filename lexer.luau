@@ -3,6 +3,10 @@
 
 local lexer = {}
 
+local common = require("common")
+
+local registers = common.registers
+
 export type Token = {
 	t: string,  -- token type
 	v: string,  -- token value
@@ -41,7 +45,12 @@ function lexer.tokenize(src: string): { Token }
 				col += 1
 			end
 			i = j
-			table.insert(tokens, { t = "IDENTF", v = buf, l = lineNumber, cb = begin, ce = col })
+
+			if table.find(registers, buf) then
+				table.insert(tokens, { t = "REG", v = buf, l = lineNumber, cb = begin, ce = col })
+			else
+				table.insert(tokens, { t = "IDENTF", v = buf, l = lineNumber, cb = begin, ce = col })
+			end
 		
 		elseif ch:match("[,%.:]") then
 			-- collect punctuation
