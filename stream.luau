@@ -15,7 +15,8 @@ export type Stream = {
 	readstring: (self: Stream) -> string,			   -- read  a null-terminated ASCII string
 	writestring: (self: Stream, v: string) -> number,  -- write a null-terminated ASCII string
 
-	seek: (self: Stream, newOffset: number) -> number, -- move self.offset to newOffset. returns the old offset
+	seekg: (self: Stream, where: number) -> number, -- moves cursor to where. returns the old offset
+	tellg: (self: Stream) -> number,                    -- returns where the cursor is
 
 	expand: (self: Stream, by: number) -> number,				   -- expands self.buf by "by". returns old size
 	shrink: (self: Stream, by: number, lossy: boolean?) -> number, -- shrinks self.buf by "by". returns old size
@@ -26,43 +27,61 @@ function stream.new(size: number): Stream
 end
 
 function stream:writeu8(v: number)
-	assert(self.offset + 1 <= buffer.len(self.src), "overflow")
+	assert(self.offset + 1 <= buffer.len(self.src), "out of range")
 	buffer.writeu8(self.src, self.offset, v)
 	self.offset += 1
 	return self.offset - 1
 end
 
 function stream:readu8()
-	assert(self.offset + 1 <= buffer.len(self.src), "underflow")
+	assert(self.offset + 1 <= buffer.len(self.src), "out of range")
 	local v = buffer.readu8(self.src, self.offset)
 	self.offset += 1
 	return v
 end
 
 function stream:writeu16(v: number)
-	assert(self.offset + 2 <= buffer.len(self.src), "overflow")
+	assert(self.offset + 2 <= buffer.len(self.src), "out of range")
 	buffer.writeu16(self.src, self.offset, v)
 	self.offset += 2
 	return self.offset - 2
 end
 
 function stream:readu16()
-	assert(self.offset + 2 <= buffer.len(self.src), "underflow")
+	assert(self.offset + 2 <= buffer.len(self.src), "out of range")
 	local v = buffer.readu16(self.src, self.offset)
 	self.offset += 2
 	return v
 end
 
-function stream:seek(newOffset: number): number
-	assert(newOffset <= buffer.len(self.src) and newOffset >= 0, "out of range")
+function stream:writeu32(v: number): number
+	assert(self.offset + 4 <= buffer.len(self.src), "out of range")
+	buffer.writeu32(self.src, self.offset, v)
+	self.offset += 4
+	return self.offset - 4
+end
+
+function stream:readu32()
+	assert(self.offset + 4 <= buffer.len(self.src), "out of range")
+	local v = buffer.readu32(self.src, self.offset)
+	self.offset += 4
+	return v
+end
+
+function stream:seekg(where: number): number
+	assert(where <= buffer.len(self.src) and where >= 0, "out of range")
 	local old = self.offset
-	self.offset = newOffset
+	self.offset = where
 	return old
+end
+
+function stream:tellg(): number
+	return self.offset
 end
 
 function stream:writestring(v: string): number
 	v ..= "\0\0"
-	assert(self.offset + string.len(v) <= buffer.len(self.src), "underflow")
+	assert(self.offset + string.len(v) <= buffer.len(self.src), "out of range")
 	local old = self.offset
 	buffer.writestring(self.src, self.offset, v)
 	self.offset += string.len(v)

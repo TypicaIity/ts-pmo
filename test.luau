@@ -19,5 +19,5 @@ end
 
 print(buf2x(compiler.compile(parser.parse(lexer.tokenize([[
 section .text:
-    ret
+    add rax, rbx
 ]])))))

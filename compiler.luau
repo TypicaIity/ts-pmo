@@ -11,6 +11,8 @@ export type CompilerOptions = {
 	verbose: boolean            -- log detailed information          -- TODO
 }
 
+export type Metadata = { number }
+
 local DEFAULT_COMPILER_OPTIONS: CompilerOptions = table.freeze({
 	baseStreamSize = 32,
 	verbose = false
@@ -38,6 +40,26 @@ local regsize: { [string]: number } = {
 	flags = 16
 }
 
+-- pack metadata
+local function packmd(md: Metadata): number
+	local a, b, c = unpack(md)
+	assert(rawlen(md) == 3 and a and b and c)
+	assert(a >= 0 and a < 4, "a must be in range 0..3")
+	assert(b >= 0 and b < 8, "b must be in range 0..7")
+	assert(c >= 0 and c < 8, "c must be in range 0..7")
+
+	return bit32.bor(bit32.lshift(a, 6), bit32.lshift(b, 3), c)
+end
+
+-- unpack metadata
+local function unpackmd(byte: number): Metadata
+	return {
+		bit32.band(bit32.rshift(byte, 6), 0x03),
+		bit32.band(bit32.rshift(byte, 3), 0x07),
+		bit32.band(byte, 0x07),
+	}
+end
+
 local function opcode(mnemonic: string): number
 	local i = 1
 	for name in parser.instructions do
@@ -53,10 +75,10 @@ local function writeSection(stream: stream.Stream, data: parser.Tree, options: C
 	local start: number = stream.offset
 
 	for _, insn in data do
-		local metadata: number = 0x00 -- placeholder
+		local metadata: Metadata = { 0, 0, 0 } -- placeholder
 
 		local op: number = opcode(insn.data.mnemonic)
-		local metadataPos: number = stream:writeu8(metadata)
+		local metadataPos: number = stream:writeu8(packmd(metadata))
 		stream:writeu8(op)
 		
 		if op == 43 then     -- ADD
@@ -73,7 +95,7 @@ local function writeSection(stream: stream.Stream, data: parser.Tree, options: C
 				stream["writeu" .. tostring(regsize[r])](stream, tonumber(insn.data.operands[2].v) :: number)
 			end
 
-			metadata = mode
+			metadata[1] = mode
 		elseif op == 07 then -- RET
 			local count = #insn.data.operands
 			assert(count == 0 or count == 1, "invalid operand amount")
@@ -82,12 +104,12 @@ local function writeSection(stream: stream.Stream, data: parser.Tree, options: C
 				assert(bytes)
 				stream:writeu8(bytes)
 			end
-			metadata = count
+			metadata[1] = count
 		end
 
-		local old: number = stream:seek(metadataPos)
-		stream:writeu8(metadata)
-		stream:seek(old)
+		local old: number = stream:seekg(metadataPos)
+		stream:writeu8(packmd(metadata))
+		stream:seekg(old)
 	end
 
 	return stream.offset - start
@@ -105,9 +127,9 @@ function compiler.compile(ast: parser.Tree, options: CompilerOptions?): buffer
 			stream:writestring(node.data.name)
 			local pos: number = stream:writeu16(0) -- we dont know the size yet
 			local size: number = writeSection(stream, node.body, options)
-			local old: number = stream:seek(pos)
+			local old: number = stream:seekg(pos)
 			stream:writeu16(size) -- now we do know the size
-			stream:seek(old) -- restore position
+			stream:seekg(old) -- restore position
 		end
 	end
 	
