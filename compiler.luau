@@ -29,8 +29,9 @@ local OPMODE: { [string]: number } = {
 }
 
 local regsize: { [string]: number } = {
-	rax = 64, rbx = 64, rcx = 64, rdx = 64, rsp = 64, rip = 64, rbp = 64, rsi = 64, rdi = 64,
-	r8 = 64, r9 = 64, r10 = 64, r11 = 64, r12 = 64, r13 = 64, r14 = 64, r15 = 64,
+    -- buffer and bit32 dont support 64 bit numbers
+	rax = 32, rbx = 32, rcx = 32, rdx = 32, rsp = 32, rip = 32, rbp = 32, rsi = 32, rdi = 32,
+	r8 = 32, r9 = 32, r10 = 32, r11 = 32, r12 = 32, r13 = 32, r14 = 32, r15 = 32,
 
 	eax = 32, ebx = 32, ecx = 32, esp = 32, eip = 32, ebp = 32, esi = 32, edi = 32,
 
