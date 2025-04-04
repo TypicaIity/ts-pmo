@@ -33,54 +33,11 @@ local OPIDX: { [string]: number } = {
 }
 
 local regsize: { [string]: number } = common.regsize
-local instructions: { [string]: { operands: number | {number}, types: string } } = common.instructions
 local registers: { string } = common.registers
 
-local function _pack(d: { number }, size: number): number
-	local a, b, c = unpack(d)
-	assert(size == 2 or size == 3, "invalid size")
-	assert(rawlen(d) == size and a and b)
-	if size == 3 then
-		assert(c)
-		assert(a >= 0 and a < 4, "a must be in range 0..3")
-		assert(b >= 0 and b < 8, "b must be in range 0..7")
-		assert(c >= 0 and c < 8, "c must be in range 0..7")
-
-		return bit32.bor(bit32.lshift(a, 6), bit32.lshift(b, 3), c)
-	else
-		assert(a >= 0 and a < 0x10, "a must be in range 0..15")
-		assert(b >= 0 and b < 0x10, "b must be in range 0..15")
-
-		return bit32.bor(bit32.lshift(a, 4), b)
-	end
-end
-
-local function _unpack(byte: number, size: number): { number }
-	assert(size == 2 or size == 3, "invalid size")
-	if size == 3 then
-		return {
-			bit32.band(bit32.rshift(byte, 6), 3),
-			bit32.band(bit32.rshift(byte, 3), 7),
-			bit32.band(byte, 7),
-		}
-	else
-		return {
-			bit32.band(bit32.rshift(byte, 4), 0xF),
-			bit32.band(byte, 0xF),
-		}
-	end
-end
-
-local function opcode(mnemonic: string): number
-	local i = 1
-	for name in instructions do
-		if name == mnemonic then
-			return i
-		end
-		i += 1
-	end
-	assert(false)
-end
+local _unpack = common._unpack
+local _pack   = common._pack
+local opcode  = common.opcode
 
 local function writeSection(stream: stream.Stream, data: parser.Tree, options: CompilerOptions): number
 	local start: number = stream.offset
